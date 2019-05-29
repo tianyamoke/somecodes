@@ -72,3 +72,142 @@ public static boolean isIDNumber(String IDNumber) {
         return matches;
     } 
 ```
+> 2. 爬虫、下载图片
+```
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.Elements;
+
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Created by cayley on 2019/5/28.
+ */
+public class DownloadImg {
+
+    public static void main(String[] args) throws Exception {
+
+//        downloadPicture("http://ppbc.iplant.cn/image/236/4559711.jpg");
+        parse360();
+
+    }
+    //链接url下载图片
+    private static void downloadPicture(String urlList) throws Exception {
+        URL url = null;
+        int imageNumber = 0;
+        try {
+            url = new URL(urlList);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestProperty("referer", "http://ppbc.iplant.cn");
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(5 * 1000);
+            InputStream inStream = conn.getInputStream();//通过输入流获取图片数据
+            readInputStream(inStream, "/Users/cayley/Downloads/image/111.png");
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void readInputStream(InputStream inStream, String path) throws Exception{
+        FileOutputStream fos = new FileOutputStream(new File(path));
+        byte[] buffer = new byte[102400];
+        int len = 0;
+        while( (len=inStream.read(buffer)) != -1 ){
+            fos.write(buffer, 0, len);
+        }
+        inStream.close();
+        fos.flush();
+        fos.close();
+    }
+
+    public static void parseSomething(String key){
+        Map<String,String> map = new HashMap<>();
+        try{
+            Document doc = Jsoup.connect("http://ppbc.iplant.cn/list?keyword="+key).userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31").get();
+            System.out.println(doc);
+            if(doc!=null){
+                // dom解析获得指定元素
+                Element count = doc.getElementById("form1");
+                String id = count.baseUri().substring(count.baseUri().lastIndexOf("/")+1,count.baseUri().length());
+                int i=1;
+                while (true){
+                    Document listDoc = Jsoup.connect("http://ppbc.iplant.cn/ashx/getphotopage.ashx?page="+i+"&n=2&group=sp&cid="+id).userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31").get();
+
+                    i++;
+                }
+
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public static void parse360(){
+        Map<String,String> map = new HashMap<>();
+        int c = 0;
+        try{
+            Document doc = Jsoup.connect("http://www.huacaoshumu.net/fenlei/shumu.php").userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31").get();
+            if(doc!=null){
+                // dom解析获得指定元素
+                Elements divs = doc.getElementsByClass("bao");
+
+                for(Element e:divs){
+                    c++;
+                    Node node = e.child(0).childNodes().get(1);
+                    String url = e.child(0).attr("href");
+                    url = url.replaceAll("\\r","");
+                    url = url.replaceAll("\\n","");
+                    Document oneDoc = Jsoup.connect("http://www.huacaoshumu.net"+url).userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31").get();
+                    int i=0;
+                    if(oneDoc!=null){
+                        Element tu = oneDoc.getElementById("tu");
+                        String imageUrl = "http://www.huacaoshumu.net"+tu.attr("src");
+                        String imgName = node.toString()+i+".jpg";
+                        download222(imageUrl,imgName);
+
+                        Elements imgHidden = oneDoc.getElementsByClass("image_hidden");
+                        for(Element img:imgHidden.get(0).children()){
+                            i++;
+                            String imgUrl = "http://www.huacaoshumu.net"+img.attr("src");
+                            String hname = node.toString()+i+".jpg";
+                            download222(imgUrl,hname);
+                            System.out.println("正在下载"+c+"树的第"+i+"个图片");
+                        }
+                    }
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private static void download222(String urlList,String imgName) throws Exception {
+        URL url = null;
+        int imageNumber = 0;
+        try {
+            url = new URL(urlList);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(5 * 1000);
+            InputStream inStream = conn.getInputStream();//通过输入流获取图片数据
+            readInputStream(inStream, "/Users/cayley/Downloads/image/"+imgName);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+}
+
+```
+
